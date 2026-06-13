@@ -4,7 +4,7 @@ const api = axios.create({
   // ✅ Uses Vercel environment variable, falls back to localhost for development
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:12000",
   headers: { "Content-Type": "application/json" },
-  withCredentials: true
+  //withCredentials: true
 });
 
 // Add token to requests
