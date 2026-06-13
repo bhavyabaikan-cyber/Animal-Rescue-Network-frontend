@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@import "leaflet/dist/leaflet.css";
+
+/* Fix Leaflet z-index conflicts with Tailwind */
+.leaflet-pane { z-index: 400 !important; }
+.leaflet-top, .leaflet-bottom { z-index: 500 !important; }
+.custom-marker { background: transparent !important; border: none !important; }
