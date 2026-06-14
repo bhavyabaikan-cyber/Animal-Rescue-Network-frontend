@@ -60,13 +60,13 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       // ✅ FIXED: Proper syntax for socket.io connection
-const socket = io(import.meta.env.VITE_API_URL || "http://localhost:12000");
+            const newSocket = io(import.meta.env.VITE_API_URL || "http://localhost:12000", {
         auth: {
           token: localStorage.getItem("token"),
           userId: user.id
         }
       });
-
+      
       newSocket.on("connect", () => {
         console.log("✅ Socket Connected!");
       });
