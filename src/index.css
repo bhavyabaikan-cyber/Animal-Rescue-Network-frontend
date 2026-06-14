@@ -6,3 +6,29 @@
 .leaflet-pane { z-index: 400 !important; }
 .leaflet-top, .leaflet-bottom { z-index: 500 !important; }
 .custom-marker { background: transparent !important; border: none !important; }
+
+/* ========================================= */
+/* EMERGENCY MOBILE FIX FOR DASHBOARD LAYOUT */
+/* ========================================= */
+@media (max-width: 768px) {
+  /* Hide sidebars on mobile so main content isn't squished */
+  aside, 
+  nav[class*="sidebar"], 
+  div[class*="w-64"], 
+  div[class*="w-72"],
+  div[class*="w-56"] {
+    display: none !important;
+  }
+
+  /* Make main content take full width and remove left margins */
+  main, 
+  div[class*="flex-1"], 
+  div[class*="ml-64"],
+  div[class*="ml-72"],
+  div[class*="md:ml-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    padding: 1rem !important;
+  }
+}
