@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
+import { useSocket } from "../context/SocketContext"; // ✅ Added
 import api from "../api/client";
 
 export default function NotificationBell() {
   const { user } = useAuth();
+  const { socket } = useSocket(); // ✅ Added
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -12,7 +14,6 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // ✅ Only fetch if user is logged in
     if (!user) {
       setNotifications([]);
       setMessages([]);
@@ -25,8 +26,39 @@ export default function NotificationBell() {
     return () => clearInterval(interval);
   }, [user]);
 
+  // ✅ NEW: Listen for real-time notifications via Socket.IO
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    // Listen for new notifications (try common event names)
+    const handleNewNotification = () => {
+      console.log("🔔 New notification received via Socket.IO");
+      fetchDropdownData(); // Refresh immediately
+    };
+
+    const handleNewMessage = () => {
+      console.log("💬 New message received via Socket.IO");
+      fetchDropdownData(); // Refresh immediately
+    };
+
+    // ✅ Listen for multiple possible event names
+    socket.on("newNotification", handleNewNotification);
+    socket.on("notification", handleNewNotification);
+    socket.on("notify", handleNewNotification);
+    socket.on("newMessage", handleNewMessage);
+    socket.on("message", handleNewMessage);
+
+    return () => {
+      socket.off("newNotification", handleNewNotification);
+      socket.off("notification", handleNewNotification);
+      socket.off("notify", handleNewNotification);
+      socket.off("newMessage", handleNewMessage);
+      socket.off("message", handleNewMessage);
+    };
+  }, [socket, user]);
+
   const fetchDropdownData = async () => {
-    if (!user) return; // ✅ Extra safety check
+    if (!user) return;
     
     try {
       const [notifRes, msgRes] = await Promise.all([
@@ -42,23 +74,17 @@ export default function NotificationBell() {
       
       setUnreadCount(notifUnread + msgUnread);
     } catch (err) {
-      // ✅ Silently fail - don't spam console with 401 errors
       if (err.response?.status !== 401) {
         console.error("Failed to fetch dropdown data:", err);
       }
     }
   };
 
-  // ✅ Don't render anything if not logged in
   if (!user) return null;
 
   const handleNotificationClick = (notif) => {
     setIsOpen(false);
-
-    // ✅ Remove the red mark immediately
     setUnreadCount(prev => Math.max(0, prev - 1));
-
-    // Navigate to the link
     if (notif.link) {
       navigate(notif.link);
     }
@@ -89,7 +115,6 @@ export default function NotificationBell() {
             <h3 className="font-semibold text-[#1d1d1f]">Notifications & Messages</h3>
           </div>
 
-          {/* Notifications */}
           {notifications.length > 0 && (
             <div className="py-2">
               <p className="px-4 py-1 text-xs font-semibold text-[#a1a1a6] uppercase">Notifications</p>
@@ -106,7 +131,6 @@ export default function NotificationBell() {
             </div>
           )}
 
-          {/* Messages */}
           {messages.length > 0 && (
             <div className="py-2 border-t border-[#e8e8ed]">
               <p className="px-4 py-1 text-xs font-semibold text-[#a1a1a6] uppercase">Messages</p>
