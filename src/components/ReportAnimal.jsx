@@ -47,7 +47,6 @@ export default function ReportAnimal() {
       toast.error("Geolocation is not supported by your browser");
       return;
     }
-
     setGettingLocation(true);
     toast.loading("Getting your location...");
 
@@ -65,13 +64,11 @@ export default function ReportAnimal() {
           const data = await response.json();
           
           if (data && data.display_name) {
-            // Auto-fill the location text box so validation passes!
             setValue("location", data.display_name);
           } else {
             setValue("location", `GPS Location: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
           }
         } catch (err) {
-          // Fallback if API fails
           setValue("location", `GPS Location: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
         }
 
@@ -98,7 +95,8 @@ export default function ReportAnimal() {
       const formData = new FormData();
       formData.append("name", data.name?.trim() || "Unnamed");
       formData.append("species", data.species);
-      formData.append("caseType", data.caseType || "Stray"); // ✅ NEW: Case type
+      formData.append("breed", data.breed?.trim() || "");  // ✅ NEW: Append breed
+      formData.append("caseType", data.caseType || "Stray");
       formData.append("location", data.location.trim());
       formData.append("contactNumber", data.contactNumber.trim());
       formData.append("description", data.description.trim());
@@ -167,8 +165,8 @@ export default function ReportAnimal() {
             </div>
           </div>
 
-          {/* Name & Species */}
-          <div className="grid sm:grid-cols-2 gap-5">
+          {/* Name, Species & Breed */}
+          <div className="grid sm:grid-cols-3 gap-5">
             <div className={formGroup}>
               <label className={labelClass}>Animal Name <span className="text-[#a1a1a6] font-normal">(Optional)</span></label>
               <input {...register("name")} className={inputClass} placeholder="Bella, Stray, etc." />
@@ -185,6 +183,11 @@ export default function ReportAnimal() {
                 <option value="Other">Other</option>
               </select>
               {errors.species && <p className={errorClass}>{errors.species.message}</p>}
+            </div>
+            {/* ✅ NEW: Breed Field */}
+            <div className={formGroup}>
+              <label className={labelClass}>Breed <span className="text-[#a1a1a6] font-normal">(Optional)</span></label>
+              <input {...register("breed")} className={inputClass} placeholder="Labrador, Persian, etc." />
             </div>
           </div>
 
