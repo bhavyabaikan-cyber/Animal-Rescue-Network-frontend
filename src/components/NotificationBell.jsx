@@ -1,174 +1,87 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../store/authStore";
-import { useSocket } from "../context/SocketContext"; // ✅ Added
 import api from "../api/client";
 
 export default function NotificationBell() {
   const { user } = useAuth();
-  const { socket } = useSocket(); // ✅ Added
-  const navigate = useNavigate();
-  const [notifications, setNotifications] = useState([]);
-  const [messages, setMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
+  // Fetch unread count when user logs in
   useEffect(() => {
-    if (!user) {
-      setNotifications([]);
-      setMessages([]);
-      setUnreadCount(0);
-      return;
+    if (user) {
+      fetchUnreadCount();
     }
-
-    fetchDropdownData();
-    const interval = setInterval(fetchDropdownData, 30000);
-    return () => clearInterval(interval);
   }, [user]);
 
-  // ✅ NEW: Listen for real-time notifications via Socket.IO
+  // Close dropdown when clicking outside
   useEffect(() => {
-    if (!socket || !user) return;
-
-    // Listen for new notifications (try common event names)
-    const handleNewNotification = () => {
-      console.log("🔔 New notification received via Socket.IO");
-      fetchDropdownData(); // Refresh immediately
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
     };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-    const handleNewMessage = () => {
-      console.log("💬 New message received via Socket.IO");
-      fetchDropdownData(); // Refresh immediately
-    };
-
-    // ✅ Listen for multiple possible event names
-    socket.on("newNotification", handleNewNotification);
-    socket.on("notification", handleNewNotification);
-    socket.on("notify", handleNewNotification);
-    socket.on("newMessage", handleNewMessage);
-    socket.on("message", handleNewMessage);
-
-    return () => {
-      socket.off("newNotification", handleNewNotification);
-      socket.off("notification", handleNewNotification);
-      socket.off("notify", handleNewNotification);
-      socket.off("newMessage", handleNewMessage);
-      socket.off("message", handleNewMessage);
-    };
-  }, [socket, user]);
-
-  const fetchDropdownData = async () => {
-    if (!user) return;
-    
+  const fetchUnreadCount = async () => {
     try {
-      const [notifRes, msgRes] = await Promise.all([
-        api.get("/notification-api"),
-        api.get("/message-api/unread-summaries")
-      ]);
-      
-      setNotifications(notifRes.data.payload || []);
-      setMessages(msgRes.data.payload || []);
-      
-      const notifUnread = (notifRes.data.payload || []).filter(n => !n.read).length;
-      const msgUnread = (msgRes.data.payload || []).reduce((sum, m) => sum + (m.unreadCount || 0), 0);
-      
-      setUnreadCount(notifUnread + msgUnread);
+      const res = await api.get("/notification-api/unread-count");
+      setUnreadCount(res.data.payload || 0);
     } catch (err) {
-      if (err.response?.status !== 401) {
-        console.error("Failed to fetch dropdown data:", err);
+      console.error("Failed to fetch notification count", err);
+    }
+  };
+
+  // ✅ THIS IS THE MAGIC FUNCTION
+  const handleBellClick = async () => {
+    const newIsOpen = !isOpen;
+    setIsOpen(newIsOpen);
+
+    // If we are OPENING the dropdown, instantly vanish the badge and mark as read
+    if (newIsOpen && unreadCount > 0) {
+      setUnreadCount(0); // ✅ Instantly hides the badge on the UI!
+      
+      try {
+        await api.post("/notification-api/mark-all-read");
+      } catch (err) {
+        console.error("Failed to mark notifications as read", err);
       }
     }
   };
 
-  if (!user) return null;
-
-  const handleNotificationClick = (notif) => {
-    setIsOpen(false);
-    setUnreadCount(prev => Math.max(0, prev - 1));
-    if (notif.link) {
-      navigate(notif.link);
-    }
-  };
-  
-  const handleMessageClick = (msg) => {
-    setIsOpen(false);
-    navigate(`/messages/${msg.conversationId}`);
-  };
-
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-[#6e6e73] hover:text-[#1d1d1f] hover:bg-[#f5f5f7] rounded-full transition"
+        onClick={handleBellClick}
+        className="relative p-2 text-[#6e6e73] hover:text-[#0066cc] transition rounded-lg hover:bg-[#f5f5f7]"
       >
-        🔔
+        {/* Bell Icon */}
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+
+        {/* ✅ The Red Badge */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+          <span className="absolute top-1 right-1 bg-[#ff3b30] text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center border-2 border-white shadow-sm">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
+      {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-[#e8e8ed] py-2 z-50 max-h-96 overflow-y-auto">
-          <div className="px-4 py-2 border-b border-[#e8e8ed]">
-            <h3 className="font-semibold text-[#1d1d1f]">Notifications & Messages</h3>
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-[#e8e8ed] py-2 z-50">
+          <div className="px-4 py-2 border-b border-[#e8e8ed] flex justify-between items-center">
+            <h3 className="font-semibold text-[#1d1d1f] text-sm">Notifications</h3>
+            <span className="text-xs text-[#6e6e73]">
+              {unreadCount === 0 ? "All caught up!" : `${unreadCount} new`}
+            </span>
           </div>
-
-          {notifications.length > 0 && (
-            <div className="py-2">
-              <p className="px-4 py-1 text-xs font-semibold text-[#a1a1a6] uppercase">Notifications</p>
-              {notifications.slice(0, 5).map((notif) => (
-                <div
-                  key={notif._id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className={`px-4 py-3 hover:bg-[#f5f5f7] cursor-pointer transition ${!notif.read ? 'bg-blue-50' : ''}`}
-                >
-                  <p className="text-sm font-semibold text-[#1d1d1f]">{notif.title}</p>
-                  <p className="text-xs text-[#6e6e73] truncate">{notif.message}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {messages.length > 0 && (
-            <div className="py-2 border-t border-[#e8e8ed]">
-              <p className="px-4 py-1 text-xs font-semibold text-[#a1a1a6] uppercase">Messages</p>
-              {messages.slice(0, 5).map((msg) => (
-                <div
-                  key={msg.conversationId}
-                  onClick={() => handleMessageClick(msg)}
-                  className="px-4 py-3 hover:bg-[#f5f5f7] cursor-pointer transition"
-                >
-                  <p className="text-sm font-semibold text-[#1d1d1f]">{msg.userName}</p>
-                  <p className="text-xs text-[#6e6e73] truncate">{msg.lastMessage}</p>
-                  {msg.unreadCount > 0 && (
-                    <span className="text-xs text-[#0066cc] font-semibold">{msg.unreadCount} unread</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {notifications.length === 0 && messages.length === 0 && (
-            <div className="px-4 py-8 text-center text-[#6e6e73] text-sm">
-              No new notifications or messages
-            </div>
-          )}
-
-          <div className="border-t border-[#e8e8ed] py-2">
-            <button
-              onClick={() => { setIsOpen(false); navigate("/notifications"); }}
-              className="w-full px-4 py-2 text-sm text-[#0066cc] hover:bg-[#f5f5f7] text-left font-semibold transition"
-            >
-              View All Notifications →
-            </button>
-            <button
-              onClick={() => { setIsOpen(false); navigate("/messages"); }}
-              className="w-full px-4 py-2 text-sm text-[#0066cc] hover:bg-[#f5f5f7] text-left font-semibold transition"
-            >
-              View All Messages →
-            </button>
+          <div className="p-4 text-center text-sm text-[#6e6e73]">
+            {unreadCount === 0 ? "No new notifications" : "Loading notifications..."}
           </div>
         </div>
       )}
