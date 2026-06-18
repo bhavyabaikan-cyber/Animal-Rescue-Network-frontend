@@ -1,54 +1,6 @@
-// import { createContext, useContext, useEffect, useState } from "react";
-// import { io } from "socket.io-client";
-// import { useAuth } from "../store/authStore";
-
-// const SocketContext = createContext();
-
-// export const SocketProvider = ({ children }) => {
-//   const { user } = useAuth();
-//   const [socket, setSocket] = useState(null);
-//   const [onlineUsers, setOnlineUsers] = useState([]);
-
-//   useEffect(() => {
-//     if (user) {
-//       const newSocket = io(import.meta.env.VITE_API_URL || "http://localhost:12000");     auth: {
-//           token: localStorage.getItem("token"),
-//           userId: user.id
-//         }
-//       });
-
-//       newSocket.on("connect", () => {
-//         console.log("✅ Socket Connected!");
-//       });
-
-//       // ✅ Listen for real-time online users list from server
-//       newSocket.on("getOnlineUsers", (users) => {
-//         setOnlineUsers(users);
-//       });
-
-//       setSocket(newSocket);
-      
-//       return () => {
-//         newSocket.off("getOnlineUsers");
-//         newSocket.close();
-//       };
-//     } else {
-//       setOnlineUsers([]); // Clear online users if logged out
-//     }
-//   }, [user]);
-
-//   return (
-//     <SocketContext.Provider value={{ socket, onlineUsers }}>
-//       {children}
-//     </SocketContext.Provider>
-//   );
-// };
-
-// export const useSocket = () => useContext(SocketContext);
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
-import { useAuth } from "../store/authStore";
+import { useAuth } from "../store/authStore"; // Adjust path if needed
 
 const SocketContext = createContext();
 
@@ -59,20 +11,29 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // ✅ FIXED: Proper syntax for socket.io connection
-            const newSocket = io(import.meta.env.VITE_API_URL || "http://localhost:12000", {
+      // ✅ CRITICAL FIX: Hardcode the production URL as a fallback
+      const SOCKET_URL = import.meta.env.VITE_API_URL || "https://animal-rescue-network-backend-95mm.onrender.com";
+      
+      console.log("🔌 Connecting to socket at:", SOCKET_URL);
+
+      const newSocket = io(SOCKET_URL, {
         auth: {
           token: localStorage.getItem("token"),
           userId: user.id
-        }
-      });
-      
-      newSocket.on("connect", () => {
-        console.log("✅ Socket Connected!");
+        },
+        transports: ['websocket', 'polling'] // ✅ Forces websocket connection
       });
 
-      // ✅ Listen for real-time online users list from server
+      newSocket.on("connect", () => {
+        console.log("✅ Socket Connected successfully!");
+      });
+
+      newSocket.on("connect_error", (err) => {
+        console.error("❌ Socket Connection Error:", err.message);
+      });
+
       newSocket.on("getOnlineUsers", (users) => {
+        console.log("🟢 Online users updated:", users);
         setOnlineUsers(users);
       });
 
@@ -83,7 +44,11 @@ export const SocketProvider = ({ children }) => {
         newSocket.close();
       };
     } else {
-      setOnlineUsers([]); // Clear online users if logged out
+      if (socket) {
+        socket.close();
+        setSocket(null);
+      }
+      setOnlineUsers([]);
     }
   }, [user]);
 
