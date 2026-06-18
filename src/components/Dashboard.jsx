@@ -19,31 +19,36 @@ export default function Dashboard() {
   // Define sidebar items based on role
   const getSidebarItems = () => {
     switch (user.role) {
-     case "REPORTER":
-  return [
-    { path: "/reporter-dashboard", label: "My Reports", icon: "📋" },
-    { path: "/report", label: "Report Animal", icon: "📢" },
-    { path: "/cases", label: "All Cases", icon: "🐾" },
-    { path: "/profile", label: "Profile", icon: "👤" },
-  ];
-           case "DONOR":
-        return (
-          <>
-            <button onClick={() => navigate("/donor")} className={`${articleCardClass} text-left p-6 cursor-pointer hover:shadow-md transition border-l-4 border-l-[#0066cc] bg-[#eff6ff]`}>
-              <h4 className={articleTitle}>💙 My Donor Dashboard</h4>
-              <p className="text-sm text-[#6e6e73] mt-1">Track your donations and the impact you've made</p>
-            </button>
-            <button onClick={() => navigate("/cases")} className={`${articleCardClass} text-left p-6 cursor-pointer hover:shadow-md transition`}>
-              <h4 className={articleTitle}>💖 Fund a Rescue</h4>
-              <p className="text-sm text-[#6e6e73] mt-1">Browse active cases and donate to vet care</p>
-            </button>
-          </>
-        );
+      case "REPORTER":
+        return [
+          { path: "/reporter-dashboard", label: "My Reports", icon: "📋" },
+          { path: "/report", label: "Report Animal", icon: "📢" },
+          { path: "/cases", label: "All Cases", icon: "🐾" },
+          { path: "/profile", label: "Profile", icon: "👤" },
+        ];
+      case "DONOR":
+        return [
+          { path: "/donor", label: "My Donor Dashboard", icon: "💙", description: "Track your donations and the impact you've made" },
+          { path: "/cases", label: "Fund a Rescue", icon: "💖", description: "Browse active cases and donate to vet care" },
+          { path: "/profile", label: "Profile", icon: "👤" },
+        ];
       case "ADOPTER":
         return [
           { path: "/dashboard", label: "My Applications", icon: "🏠" },
           { path: "/cases?status=Adoption%20Pending", label: "Available Animals", icon: "🐾" },
           { path: "/adoptions", label: "Adoptions", icon: "📋" },
+          { path: "/profile", label: "Profile", icon: "👤" },
+        ];
+      case "VOLUNTEER":
+        return [
+          { path: "/volunteer", label: "My Cases", icon: "🦸" },
+          { path: "/cases", label: "All Cases", icon: "🐾" },
+          { path: "/profile", label: "Profile", icon: "👤" },
+        ];
+      case "ADMIN":
+        return [
+          { path: "/admin", label: "Admin Dashboard", icon: "⚙️" },
+          { path: "/analytics", label: "Analytics", icon: "📊" },
           { path: "/profile", label: "Profile", icon: "👤" },
         ];
       default:
@@ -63,7 +68,9 @@ export default function Dashboard() {
         >
           <div className="text-3xl mb-3">{item.icon}</div>
           <h3 className="text-lg font-bold text-[#1d1d1f] mb-2">{item.label}</h3>
-          <p className="text-sm text-[#6e6e73]">Manage your {item.label.toLowerCase()}</p>
+          <p className="text-sm text-[#6e6e73]">
+            {item.description || `Manage your ${item.label.toLowerCase()}`}
+          </p>
         </button>
       ))}
     </div>
