@@ -26,7 +26,7 @@ export default function Messages() {
 
   if (loading) return <p className={loadingClass}>Loading conversations...</p>;
 
-  if (conversations.length === 0) {
+  if (!conversations || conversations.length === 0) {
     return (
       <div className={`${pageWrapper} text-center py-20`}>
         <p className="text-6xl mb-4">💬</p>
@@ -44,10 +44,12 @@ export default function Messages() {
       <h1 className="text-3xl font-bold text-[#1d1d1f] mb-6">Messages</h1>
       <div className="bg-white rounded-2xl border border-[#e8e8ed] shadow-sm overflow-hidden">
         {conversations
-          .filter(conv => conv && conv._id && conv.participants) // ✅ Filter out invalid conversations
+          .filter(conv => conv && conv._id && Array.isArray(conv.participants))
           .map((conv) => {
-            const otherUser = conv.participants.find(p => p && p._id !== user.id);
-            const lastMsg = conv.messages?.[conv.messages.length - 1];
+            const otherUser = conv.participants.find(p => p && p._id && p._id !== user.id);
+            const lastMsg = conv.messages && conv.messages.length > 0 
+              ? conv.messages[conv.messages.length - 1] 
+              : null;
             
             return (
               <div 
@@ -63,7 +65,7 @@ export default function Messages() {
                     <h3 className="font-semibold text-[#1d1d1f] truncate">
                       {otherUser?.firstName || "User"} {otherUser?.lastName || ""}
                     </h3>
-                    {lastMsg && (
+                    {lastMsg && lastMsg.createdAt && (
                       <span className="text-xs text-[#a1a1a6] flex-shrink-0 ml-2">
                         {new Date(lastMsg.createdAt).toLocaleDateString()}
                       </span>
@@ -72,8 +74,8 @@ export default function Messages() {
                   <p className="text-sm text-[#6e6e73] truncate">
                     {lastMsg 
                       ? (lastMsg.sender?._id === user.id 
-                          ? `You: ${lastMsg.text || "📷 Photo"}` 
-                          : `${lastMsg.text || "📷 Photo"}`)
+                          ? `You: ${lastMsg.text || (lastMsg.fileUrl ? "📎 File" : "📷 Photo")}` 
+                          : `${lastMsg.text || (lastMsg.fileUrl ? "📎 File" : "📷 Photo")}`)
                       : "No messages yet"
                     }
                   </p>
