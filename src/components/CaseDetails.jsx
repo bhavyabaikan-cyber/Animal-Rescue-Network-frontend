@@ -80,10 +80,48 @@ export default function CaseDetails() {
   };
 
   const handleHelpAction = async (actionType) => {
-    if (!user) {
-      window.dispatchEvent(new CustomEvent("openAuth", { detail: "login" }));
-      return;
+  if (!user) {
+    window.dispatchEvent(new CustomEvent("openAuth", { detail: "login" }));
+    return;
+  }
+
+  // ✅ If it's a share action, trigger the actual share dialog
+  if (actionType === "share") {
+    const shareData = {
+      title: `Help ${animal.name || "this animal"} - Animal Rescue Network`,
+      text: `${animal.species} ${animal.breed ? `- ${animal.breed}` : ""} needs help! ${animal.description?.substring(0, 100)}...`,
+      url: window.location.href
+    };
+
+    // ✅ Try native share API (works on mobile devices)
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        // Record the share action in backend
+        await api.post("/common-api/help-action", { animalId: id, actionType });
+        toast.success("Thanks for sharing! 🙏");
+        fetchAnimal();
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error("Share failed:", err);
+          // Fallback: Open WhatsApp directly
+          const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + ' ' + shareData.url)}`;
+          window.open(whatsappUrl, '_blank');
+          await api.post("/common-api/help-action", { animalId: id, actionType });
+          toast.success("Shared on WhatsApp! 💚");
+          fetchAnimal();
+        }
+      }
+    } else {
+      // ✅ Fallback for desktop: Open WhatsApp directly
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + ' ' + shareData.url)}`;
+      window.open(whatsappUrl, '_blank');
+      await api.post("/common-api/help-action", { animalId: id, actionType });
+      toast.success("Shared on WhatsApp! 💚");
+      fetchAnimal();
     }
+  } else {
+    // For other actions (like, etc.)
     try {
       await api.post("/common-api/help-action", { animalId: id, actionType });
       toast.success(`${actionType} recorded! Thank you!`);
@@ -91,7 +129,8 @@ export default function CaseDetails() {
     } catch (err) {
       toast.error("Failed to record action");
     }
-  };
+  }
+};
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
