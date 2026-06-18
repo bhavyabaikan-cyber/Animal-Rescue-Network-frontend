@@ -5,9 +5,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../api/client";
 import { toast } from "react-hot-toast";
-import { pageWrapper, loadingClass, ghostBtn, submitBtn } from "../styles/common";
+import { pageWrapper, loadingClass, submitBtn } from "../styles/common";
 
-// ✅ Fix Leaflet's default marker icon issue in bundlers
+// Fix Leaflet's default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -15,7 +15,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// ✅ Custom colored markers by status
+// Custom colored markers by status
 const createIcon = (color) => new L.DivIcon({
   className: "custom-marker",
   html: `<div style="background:${color};width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>`,
@@ -31,7 +31,6 @@ const statusColors = {
   Adopted: "#6b7280"
 };
 
-// Component to recenter map
 function RecenterMap({ center }) {
   const map = useMap();
   useEffect(() => { map.setView(center, map.getZoom()); }, [center, map]);
@@ -43,11 +42,10 @@ export default function MapView() {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
-  const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]); // India center
+  const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]);
   const [radius, setRadius] = useState(50);
   const [statusFilter, setStatusFilter] = useState("All");
 
-  // Fetch cases
   const fetchCases = async (lat, lng, rad) => {
     setLoading(true);
     try {
@@ -70,7 +68,6 @@ export default function MapView() {
 
   useEffect(() => { fetchCases(); }, [statusFilter]);
 
-  // Get user's current location
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation not supported");
@@ -122,7 +119,6 @@ export default function MapView() {
         </div>
       </div>
 
-      {/* Radius Slider (only show if user location is set) */}
       {userLocation && (
         <div className="mb-4 p-4 bg-[#f8f9fa] rounded-xl border border-[#e8e8ed]">
           <label className="text-sm font-medium text-[#1d1d1f]">
@@ -132,7 +128,6 @@ export default function MapView() {
         </div>
       )}
 
-      {/* Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
         {Object.entries(statusColors).map(([status, color]) => {
           const count = cases.filter(c => c.status === status).length;
@@ -148,7 +143,6 @@ export default function MapView() {
         })}
       </div>
 
-      {/* Map Container */}
       <div className="relative rounded-2xl overflow-hidden border border-[#e8e8ed] shadow-sm" style={{ height: "600px" }}>
         {loading && (
           <div className="absolute inset-0 bg-white/80 z-[1000] flex items-center justify-center">
@@ -164,7 +158,6 @@ export default function MapView() {
           
           <RecenterMap center={mapCenter} />
 
-          {/* User location marker */}
           {userLocation && (
             <>
               <Marker position={userLocation} icon={new L.DivIcon({
@@ -179,26 +172,22 @@ export default function MapView() {
             </>
           )}
 
-          {/* ✅ Case markers - SINGLE CLEAN LOOP */}
+          {/* ✅ SINGLE CLEAN LOOP - All cases */}
           {cases
             .filter(c => c && c._id)
             .map(c => {
               const hasCoords = c.location?.coordinates?.coordinates && c.location.coordinates.coordinates.length === 2;
               
-              // ✅ If no coordinates and user hasn't shared location, skip this marker
               if (!hasCoords && !userLocation) return null;
               
-              // ✅ Determine position
               let lat, lng;
               if (hasCoords) {
                 const coords = c.location.coordinates.coordinates;
                 [lng, lat] = coords;
               } else {
-                // Use user's location for cases without coordinates
                 [lat, lng] = [userLocation[0], userLocation[1]];
               }
               
-              // ✅ Different marker for cases without coordinates
               const markerIcon = hasCoords 
                 ? createIcon(statusColors[c.status] || "#6b7280")
                 : new L.DivIcon({
@@ -244,7 +233,6 @@ export default function MapView() {
         </MapContainer>
       </div>
 
-      {/* Legend */}
       <div className="mt-4 p-4 bg-white rounded-xl border border-[#e8e8ed]">
         <p className="text-xs font-semibold text-[#1d1d1f] mb-2">Legend</p>
         <div className="flex flex-wrap gap-4 text-xs text-[#6e6e73]">
