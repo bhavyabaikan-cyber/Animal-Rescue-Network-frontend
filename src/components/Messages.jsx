@@ -43,35 +43,44 @@ export default function Messages() {
     <div className={pageWrapper}>
       <h1 className="text-3xl font-bold text-[#1d1d1f] mb-6">Messages</h1>
       <div className="bg-white rounded-2xl border border-[#e8e8ed] shadow-sm overflow-hidden">
-        {conversations.map((conv) => {
-          const otherUser = conv.participants.find(p => p._id !== user.id);
-          const lastMsg = conv.messages?.[conv.messages.length - 1];
-          
-          return (
-            <div 
-              key={conv._id} 
-              onClick={() => navigate(`/messages/${conv._id}`)}
-              className="flex items-center gap-4 p-4 border-b border-[#e8e8ed] last:border-0 hover:bg-[#f8f9fa] cursor-pointer transition"
-            >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
-                {otherUser?.firstName?.[0]?.toUpperCase() || "U"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-baseline mb-1">
-                  <h3 className="font-semibold text-[#1d1d1f] truncate">{otherUser?.firstName} {otherUser?.lastName}</h3>
-                  {lastMsg && (
-                    <span className="text-xs text-[#a1a1a6] flex-shrink-0 ml-2">
-                      {new Date(lastMsg.createdAt).toLocaleDateString()}
-                    </span>
-                  )}
+        {conversations
+          .filter(conv => conv && conv._id && conv.participants) // ✅ Filter out invalid conversations
+          .map((conv) => {
+            const otherUser = conv.participants.find(p => p && p._id !== user.id);
+            const lastMsg = conv.messages?.[conv.messages.length - 1];
+            
+            return (
+              <div 
+                key={conv._id} 
+                onClick={() => navigate(`/messages/${conv._id}`)}
+                className="flex items-center gap-4 p-4 border-b border-[#e8e8ed] last:border-0 hover:bg-[#f8f9fa] cursor-pointer transition"
+              >
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0066cc] to-[#0052a3] text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
+                  {otherUser?.firstName?.[0]?.toUpperCase() || "U"}
                 </div>
-                <p className="text-sm text-[#6e6e73] truncate">
-                  {lastMsg ? (lastMsg.sender._id === user.id ? `You: ${lastMsg.text || "📷 Photo"}` : `${lastMsg.text || "📷 Photo"}`) : "No messages yet"}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline mb-1">
+                    <h3 className="font-semibold text-[#1d1d1f] truncate">
+                      {otherUser?.firstName || "User"} {otherUser?.lastName || ""}
+                    </h3>
+                    {lastMsg && (
+                      <span className="text-xs text-[#a1a1a6] flex-shrink-0 ml-2">
+                        {new Date(lastMsg.createdAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-[#6e6e73] truncate">
+                    {lastMsg 
+                      ? (lastMsg.sender?._id === user.id 
+                          ? `You: ${lastMsg.text || "📷 Photo"}` 
+                          : `${lastMsg.text || "📷 Photo"}`)
+                      : "No messages yet"
+                    }
+                  </p>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
     </div>
   );
