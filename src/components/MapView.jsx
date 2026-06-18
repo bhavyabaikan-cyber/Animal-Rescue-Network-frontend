@@ -180,37 +180,39 @@ export default function MapView() {
           )}
 
           {/* Case markers */}
-          {cases.map(c => {
-            const coords = c.location?.coordinates?.coordinates;
-            if (!coords || coords.length !== 2) return null;
-            const [lng, lat] = coords;
-            
-            return (
-              <Marker key={c._id} position={[lat, lng]} icon={createIcon(statusColors[c.status] || "#6b7280")}>
-                <Popup>
-                  <div style={{ minWidth: "220px", fontFamily: "system-ui" }}>
-                    {c.imageUrl && <img src={c.imageUrl} alt={c.name} style={{ width: "100%", height: "120px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }} />}
-                    <h3 style={{ fontSize: "15px", fontWeight: "600", margin: "0 0 4px 0", color: "#1d1d1f" }}>
-                      {c.name || "Unnamed"} ({c.species})
-                    </h3>
-                    <div style={{ display: "inline-block", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "500", background: statusColors[c.status] + "20", color: statusColors[c.status], marginBottom: "6px" }}>
-                      {c.status}
-                    </div>
-                    <p style={{ fontSize: "12px", color: "#6e6e73", margin: "4px 0", lineHeight: "1.4" }}>
-                      {c.description?.substring(0, 80)}{c.description?.length > 80 ? "..." : ""}
-                    </p>
-                    <p style={{ fontSize: "11px", color: "#a1a1a6", margin: "4px 0" }}>📍 {c.location?.address}</p>
-                    <button 
-                      onClick={() => navigate(`/case/${c._id}`)}
-                      style={{ width: "100%", marginTop: "8px", padding: "6px", background: "#0066cc", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "500", cursor: "pointer" }}
-                    >
-                      View Details →
-                    </button>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
+{cases
+  .filter(c => c && c._id && c.location?.coordinates?.coordinates) // ✅ Filter out bad data first
+  .map(c => {
+    const coords = c.location.coordinates.coordinates;
+    if (!coords || coords.length !== 2) return null;
+    const [lng, lat] = coords;
+    
+    return (
+      <Marker key={c._id} position={[lat, lng]} icon={createIcon(statusColors[c.status] || "#6b7280")}>
+        <Popup>
+          <div style={{ minWidth: "220px", fontFamily: "system-ui" }}>
+            {c.imageUrl && <img src={c.imageUrl} alt={c.name} style={{ width: "100%", height: "120px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }} />}
+            <h3 style={{ fontSize: "15px", fontWeight: "600", margin: "0 0 4px 0", color: "#1d1d1f" }}>
+              {c.name || "Unnamed"} ({c.species})
+            </h3>
+            <div style={{ display: "inline-block", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "500", background: statusColors[c.status] + "20", color: statusColors[c.status], marginBottom: "6px" }}>
+              {c.status}
+            </div>
+            <p style={{ fontSize: "12px", color: "#6e6e73", margin: "4px 0", lineHeight: "1.4" }}>
+              {c.description?.substring(0, 80)}{c.description?.length > 80 ? "..." : ""}
+            </p>
+            <p style={{ fontSize: "11px", color: "#a1a1a6", margin: "4px 0" }}>📍 {c.location?.address}</p>
+            <button 
+              onClick={() => navigate(`/case/${c._id}`)}
+              style={{ width: "100%", marginTop: "8px", padding: "6px", background: "#0066cc", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "500", cursor: "pointer" }}
+            >
+              View Details →
+            </button>
+          </div>
+        </Popup>
+      </Marker>
+    );
+  })}
         </MapContainer>
       </div>
 
