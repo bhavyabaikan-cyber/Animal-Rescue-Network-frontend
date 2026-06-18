@@ -58,8 +58,6 @@ export default function Header() {
         {/* Center Navigation - Spacious and Premium */}
         <nav className="hidden md:flex items-center gap-2 bg-[#f5f5f7]/50 p-1.5 rounded-2xl border border-[#e8e8ed]">
           <NavLink to="/" className={premiumNavLink} end>Home</NavLink>
-          <NavLink to="/cases" className={premiumNavLink}>Cases</NavLink>
-          <NavLink to="/map" className={premiumNavLink}>Map View</NavLink>
           {user && (
             <NavLink to={dashboardLink} className={premiumNavLink}>Dashboard</NavLink>
           )}
