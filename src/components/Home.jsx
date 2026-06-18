@@ -66,7 +66,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6">
           <h1 className="text-4xl sm:text-6xl font-bold text-white mb-6 drop-shadow-lg" style={{ fontFamily: 'serif' }}>"Save a Life Today."</h1>
-          <button onClick={() => handleAction("/cases?status=Adoption%20Pending")} className="px-8 py-4 bg-[#34c759] hover:bg-[#28a745] text-white font-bold text-lg rounded-full transition shadow-lg transform hover:scale-105">FIND YOUR MATCH</button>
+          <button onClick={() => handleAction("/cases?status=Adoption%20Pending")} className="px-8 py-4 bg-[#34c759] hover:bg-[#28a745] text-white font-bold text-lg rounded-full transition shadow-lg transform hover:scale-105">FIND YOUR <PAWTNER></PAWTNER></button>
         </div>
         <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-20">
           {heroImages.map((_, index) => (
