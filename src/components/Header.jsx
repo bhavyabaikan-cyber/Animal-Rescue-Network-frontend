@@ -3,11 +3,14 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { pageWrapper, submitBtn } from "../styles/common";
 import NotificationBell from "./NotificationBell";
+import api from "../api/client";
 
 export default function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userPoints, setUserPoints] = useState(0);
+  const [userLevel, setUserLevel] = useState({ name: "Newcomer", icon: "🌟", color: "#6B7280" });
   const dropdownRef = useRef(null);
 
   // ✅ Dynamically determine dashboard link based on user role
@@ -16,6 +19,19 @@ export default function Header() {
                         user?.role === 'RESCUER' ? '/rescuer' : 
                         user?.role === 'DONOR' ? '/donor' :
                         user?.role === 'REPORTER' ? '/reporter' : '/adopter';
+
+  // ✅ Fetch user points
+  useEffect(() => {
+    if (user) {
+      api.get("/user-api/points")
+        .then(res => {
+          const data = res.data.payload;
+          setUserPoints(data.totalPoints);
+          setUserLevel(data.level);
+        })
+        .catch(err => console.error("Failed to fetch points", err));
+    }
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -81,7 +97,16 @@ export default function Header() {
                   </div>
                   <div className="hidden sm:block text-left">
                     <p className="text-sm font-bold text-[#1d1d1f] leading-tight">{user.firstName}</p>
-                    <p className="text-xs text-[#6e6e73] leading-tight font-medium">{user.role}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs text-[#6e6e73] leading-tight font-medium">{user.role}</p>
+                      {/* ✅ Points Badge */}
+                      <span 
+                        className="px-1.5 py-0.5 text-[10px] font-bold rounded-full text-white"
+                        style={{ backgroundColor: userLevel.color }}
+                      >
+                        {userLevel.icon} {userPoints}
+                      </span>
+                    </div>
                   </div>
                   <svg className={`w-4 h-4 text-[#6e6e73] hidden sm:block transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -93,6 +118,14 @@ export default function Header() {
                     <div className="px-4 py-3 border-b border-[#e8e8ed]">
                       <p className="text-sm font-bold text-[#1d1d1f]">{user.firstName} {user.lastName}</p>
                       <p className="text-xs text-[#6e6e73] truncate">{user.email}</p>
+                      {/* ✅ Points Summary in Dropdown */}
+                      <div className="mt-2 flex items-center gap-2 px-2 py-1.5 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                        <span className="text-lg">{userLevel.icon}</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-[#1d1d1f]">{userLevel.name}</p>
+                          <p className="text-[10px] text-[#6e6e73]">{userPoints} total points</p>
+                        </div>
+                      </div>
                     </div>
                     <button onClick={() => { setDropdownOpen(false); navigate("/profile"); }} className="w-full text-left px-4 py-3 text-sm font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition flex items-center gap-3">
                       <svg className="w-4 h-4 text-[#6e6e73]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -101,6 +134,11 @@ export default function Header() {
                     <button onClick={() => { setDropdownOpen(false); navigate("/badges"); }} className="w-full text-left px-4 py-3 text-sm font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition flex items-center gap-3">
                       <svg className="w-4 h-4 text-[#6e6e73]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
                       Badges
+                    </button>
+                    {/* ✅ New Points Menu Item */}
+                    <button onClick={() => { setDropdownOpen(false); navigate("/points"); }} className="w-full text-left px-4 py-3 text-sm font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] transition flex items-center gap-3">
+                      <span className="text-base">{userLevel.icon}</span>
+                      <span>My Points</span>
                     </button>
                     <div className="my-1 border-t border-[#e8e8ed]"></div>
                     <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-sm font-medium text-[#ff3b30] hover:bg-red-50 transition flex items-center gap-3">

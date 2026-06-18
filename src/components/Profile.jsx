@@ -3,6 +3,7 @@ import { useAuth } from "../store/authStore";
 import api from "../api/client";
 import { toast } from "react-hot-toast";
 import { pageWrapper } from "../styles/common";
+import PointsDisplay from "../components/PointsDisplay";
 
 export default function Profile() {
   const { user, refreshSession } = useAuth();
@@ -78,7 +79,8 @@ export default function Profile() {
             </div>
           </div>
         </div>
-
+        {/* Points Display */}
+<PointsDisplay />
         {/* Change Password Form */}
         <div className="bg-white rounded-2xl border border-[#e8e8ed] shadow-sm p-6">
           <h2 className="text-xl font-bold text-[#1d1d1f] mb-4">Change Password</h2>

@@ -27,7 +27,8 @@ import AdminDashboard from "./components/AdminDashboard";
 import SuccessStories from "./components/SuccessStories";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import Badges from "./components/Badges";
-import NotificationsPage from "./components/NotificationsPage"; // ✅ Added
+import NotificationsPage from "./components/NotificationsPage";
+import PointsDisplay from "./components/PointsDisplay";
 
 function App() {
   const { refreshSession } = useAuth();
@@ -59,12 +60,13 @@ function App() {
         { path: "profile", element: <ProtectedRoute><Profile /></ProtectedRoute> },
         { path: "messages", element: <ProtectedRoute><Messages /></ProtectedRoute> },
         { path: "messages/:convId", element: <ProtectedRoute><ChatWindow /></ProtectedRoute> },
-        { path: "notifications", element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> }, // ✅ Added
+        { path: "notifications", element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> },
         { path: "map", element: <MapView /> },
         { path: "admin", element: <ProtectedRoute requiredRole="ADMIN"><AdminDashboard /></ProtectedRoute> },
         { path: "stories", element: <SuccessStories /> },
         { path: "analytics", element: <ProtectedRoute requiredRole="ADMIN"><AnalyticsDashboard /></ProtectedRoute> },
         { path: "badges", element: <Badges /> },
+        { path: "points", element: <ProtectedRoute><PointsDisplay /></ProtectedRoute> }
       ],
     },
   ]);
