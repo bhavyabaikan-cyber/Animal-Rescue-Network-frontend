@@ -53,7 +53,7 @@ export default function Profile() {
 
     setChangingPassword(true);
     try {
-      await api.put("/common-api/password", {
+        await api.put("/user-api/password", {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
       });
