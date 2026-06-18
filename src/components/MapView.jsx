@@ -179,40 +179,68 @@ export default function MapView() {
             </>
           )}
 
-          {/* Case markers */}
-{cases
-  .filter(c => c && c._id && c.location?.coordinates?.coordinates) // ✅ Filter out bad data first
-  .map(c => {
-    const coords = c.location.coordinates.coordinates;
-    if (!coords || coords.length !== 2) return null;
-    const [lng, lat] = coords;
-    
-    return (
-      <Marker key={c._id} position={[lat, lng]} icon={createIcon(statusColors[c.status] || "#6b7280")}>
-        <Popup>
-          <div style={{ minWidth: "220px", fontFamily: "system-ui" }}>
-            {c.imageUrl && <img src={c.imageUrl} alt={c.name} style={{ width: "100%", height: "120px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }} />}
-            <h3 style={{ fontSize: "15px", fontWeight: "600", margin: "0 0 4px 0", color: "#1d1d1f" }}>
-              {c.name || "Unnamed"} ({c.species})
-            </h3>
-            <div style={{ display: "inline-block", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "500", background: statusColors[c.status] + "20", color: statusColors[c.status], marginBottom: "6px" }}>
-              {c.status}
-            </div>
-            <p style={{ fontSize: "12px", color: "#6e6e73", margin: "4px 0", lineHeight: "1.4" }}>
-              {c.description?.substring(0, 80)}{c.description?.length > 80 ? "..." : ""}
-            </p>
-            <p style={{ fontSize: "11px", color: "#a1a1a6", margin: "4px 0" }}>📍 {c.location?.address}</p>
-            <button 
-              onClick={() => navigate(`/case/${c._id}`)}
-              style={{ width: "100%", marginTop: "8px", padding: "6px", background: "#0066cc", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "500", cursor: "pointer" }}
-            >
-              View Details →
-            </button>
-          </div>
-        </Popup>
-      </Marker>
-    );
-  })}
+          {/* ✅ Case markers - SINGLE CLEAN LOOP */}
+          {cases
+            .filter(c => c && c._id)
+            .map(c => {
+              const hasCoords = c.location?.coordinates?.coordinates && c.location.coordinates.coordinates.length === 2;
+              
+              // ✅ If no coordinates and user hasn't shared location, skip this marker
+              if (!hasCoords && !userLocation) return null;
+              
+              // ✅ Determine position
+              let lat, lng;
+              if (hasCoords) {
+                const coords = c.location.coordinates.coordinates;
+                [lng, lat] = coords;
+              } else {
+                // Use user's location for cases without coordinates
+                [lat, lng] = [userLocation[0], userLocation[1]];
+              }
+              
+              // ✅ Different marker for cases without coordinates
+              const markerIcon = hasCoords 
+                ? createIcon(statusColors[c.status] || "#6b7280")
+                : new L.DivIcon({
+                    className: "custom-marker",
+                    html: `<div style="background:#9ca3af;width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:bold;">?</div>`,
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 28],
+                  });
+              
+              return (
+                <Marker key={c._id} position={[lat, lng]} icon={markerIcon}>
+                  <Popup>
+                    <div style={{ minWidth: "220px", fontFamily: "system-ui" }}>
+                      {c.imageUrl && <img src={c.imageUrl} alt={c.name} style={{ width: "100%", height: "120px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }} />}
+                      <h3 style={{ fontSize: "15px", fontWeight: "600", margin: "0 0 4px 0", color: "#1d1d1f" }}>
+                        {c.name || "Unnamed"} ({c.species})
+                      </h3>
+                      <div style={{ display: "inline-block", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "500", background: statusColors[c.status] + "20", color: statusColors[c.status], marginBottom: "6px" }}>
+                        {c.status}
+                      </div>
+                      {!hasCoords && (
+                        <div style={{ display: "inline-block", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: "500", background: "#fef3c7", color: "#92400e", marginLeft: "4px" }}>
+                          📍 Location not specified
+                        </div>
+                      )}
+                      <p style={{ fontSize: "12px", color: "#6e6e73", margin: "4px 0", lineHeight: "1.4" }}>
+                        {c.description?.substring(0, 80)}{c.description?.length > 80 ? "..." : ""}
+                      </p>
+                      <p style={{ fontSize: "11px", color: "#a1a1a6", margin: "4px 0" }}>
+                        📍 {c.location?.address || (hasCoords ? "Coordinates available" : "Address not provided")}
+                      </p>
+                      <button 
+                        onClick={() => navigate(`/case/${c._id}`)}
+                        style={{ width: "100%", marginTop: "8px", padding: "6px", background: "#0066cc", color: "white", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: "500", cursor: "pointer" }}
+                      >
+                        View Details →
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
         </MapContainer>
       </div>
 
@@ -226,6 +254,10 @@ export default function MapView() {
               <span>{status}</span>
             </div>
           ))}
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-[#9ca3af]"></div>
+            <span>No Location</span>
+          </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[#0066cc] border-2 border-white shadow-[0_0_0_2px_#0066cc]"></div>
             <span>You</span>
