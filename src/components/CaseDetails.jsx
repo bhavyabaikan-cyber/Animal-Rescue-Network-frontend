@@ -13,6 +13,11 @@ export default function CaseDetails() {
   
   const showApplicationOnly = searchParams.get("review") === "application";
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [editImage, setEditImage] = useState(null);
+  const [saving, setSaving] = useState(false);
+
   const [animal, setAnimal] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -228,14 +233,70 @@ export default function CaseDetails() {
     }
   };
 
+  // ✅ Check if current user is the reporter
+  const isReporter = () => {
+    if (!user || user.role !== "REPORTER") return false;
+    const reporterId = typeof animal.reportedBy === 'object' 
+      ? animal.reportedBy._id 
+      : animal.reportedBy;
+    return reporterId === user.id;
+  };
+
+  // ✅ Open edit modal with pre-filled data
+  const handleOpenEdit = () => {
+    setEditForm({
+      name: animal.name || "",
+      species: animal.species || "",
+      breed: animal.breed || "",
+      description: animal.description || "",
+      urgency: animal.urgency ? "true" : "false",
+      caseType: animal.caseType || "Stray",
+      address: animal.location?.address || "",
+      latitude: animal.location?.coordinates?.coordinates?.[1] || "",
+      longitude: animal.location?.coordinates?.coordinates?.[0] || ""
+    });
+    setEditImage(null);
+    setShowEditModal(true);
+  };
+
+  // ✅ Submit edit form
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append("name", editForm.name);
+      formData.append("species", editForm.species);
+      formData.append("breed", editForm.breed);
+      formData.append("description", editForm.description);
+      formData.append("urgency", editForm.urgency);
+      formData.append("caseType", editForm.caseType);
+      formData.append("address", editForm.address);
+      if (editForm.latitude) formData.append("latitude", editForm.latitude);
+      if (editForm.longitude) formData.append("longitude", editForm.longitude);
+      if (editImage) formData.append("image", editImage);
+
+      await api.put(`/reporter-api/report/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      
+      toast.success("Report updated successfully! ✏️");
+      setShowEditModal(false);
+      fetchAnimal();
+    } catch (err) {
+      console.error("Edit error:", err);
+      toast.error(err.response?.data?.message || "Failed to update report");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const canApplyForAdoption = () => {
     if (!user || user.role !== "ADOPTER") return false;
     if (animal.status !== "Adoption Pending" && animal.status !== "Rescued") return false;
     if (animal.adoption?.applicant) return false;
-    
-    // ✅ NEW: Do not allow adoption for Lost/Missing pets
     if (animal.caseType === "Lost") return false; 
-    
     return true;
   };
 
@@ -428,6 +489,16 @@ export default function CaseDetails() {
                 {/* ✅ Action Buttons */}
                 <div className="flex flex-wrap gap-2">
                   
+                  {/* ✅ Edit Button - Only for the reporter */}
+                  {isReporter() && (
+                    <button
+                      onClick={handleOpenEdit}
+                      className="px-4 py-2 bg-[#5856d6] hover:bg-[#4a48c4] text-white text-sm font-semibold rounded-lg transition flex items-center gap-2"
+                    >
+                      ✏️ Edit Report
+                    </button>
+                  )}
+
                   {/* ✅ NEW: Contact button for Lost Pets */}
                   {animal.caseType === "Lost" && (
                     <button
@@ -629,6 +700,168 @@ export default function CaseDetails() {
             )}
           </div>
         </>
+      )}
+
+      {/* ✅ Edit Report Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold text-[#1d1d1f]">✏️ Edit Report</h3>
+              <button 
+                onClick={() => setShowEditModal(false)} 
+                className="text-[#a1a1a6] hover:text-[#1d1d1f] text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+              <p className="text-sm text-blue-800">
+                You're updating the report for <strong>{animal.name || "this animal"}</strong>. 
+                Leave fields empty to keep current values.
+              </p>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                    placeholder="Animal's name"
+                    className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Species *</label>
+                  <input
+                    type="text"
+                    value={editForm.species}
+                    onChange={(e) => setEditForm({...editForm, species: e.target.value})}
+                    required
+                    className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Breed</label>
+                <input
+                  type="text"
+                  value={editForm.breed}
+                  onChange={(e) => setEditForm({...editForm, breed: e.target.value})}
+                  placeholder="Breed (optional)"
+                  className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Description *</label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                  required
+                  rows="3"
+                  className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Case Type</label>
+                  <select
+                    value={editForm.caseType}
+                    onChange={(e) => setEditForm({...editForm, caseType: e.target.value})}
+                    className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                  >
+                    <option value="Stray">Stray Animal</option>
+                    <option value="Lost">Lost Pet</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Urgent?</label>
+                  <select
+                    value={editForm.urgency}
+                    onChange={(e) => setEditForm({...editForm, urgency: e.target.value})}
+                    className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes - Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Address *</label>
+                <input
+                  type="text"
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                  required
+                  className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Latitude (optional)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={editForm.latitude}
+                    onChange={(e) => setEditForm({...editForm, latitude: e.target.value})}
+                    placeholder="e.g., 17.385"
+                    className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Longitude (optional)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={editForm.longitude}
+                    onChange={(e) => setEditForm({...editForm, longitude: e.target.value})}
+                    placeholder="e.g., 78.486"
+                    className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#1d1d1f] mb-1">Replace Image (optional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEditImage(e.target.files[0])}
+                  className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg"
+                />
+                {editImage && (
+                  <p className="text-xs text-[#6e6e73] mt-1">New image: {editImage.name}</p>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 py-2.5 bg-[#5856d6] hover:bg-[#4a48c4] text-white font-semibold rounded-lg transition disabled:opacity-50"
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-2.5 bg-[#f5f5f7] text-[#1d1d1f] font-semibold rounded-lg hover:bg-[#e8e8ed] transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {showAdoptionModal && (
