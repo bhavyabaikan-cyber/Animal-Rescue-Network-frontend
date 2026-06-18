@@ -13,6 +13,7 @@ export default function CaseDetails() {
   
   const showApplicationOnly = searchParams.get("review") === "application";
 
+  // ✅ Edit Modal States
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [editImage, setEditImage] = useState(null);
@@ -292,6 +293,22 @@ export default function CaseDetails() {
     }
   };
 
+  // ✅ Delete report
+  const handleDeleteReport = async () => {
+    if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/reporter-api/report/${id}`);
+      toast.success("Report deleted successfully!");
+      navigate("/");
+    } catch (err) {
+      console.error("Delete error:", err);
+      toast.error(err.response?.data?.message || "Failed to delete report");
+    }
+  };
+
   const canApplyForAdoption = () => {
     if (!user || user.role !== "ADOPTER") return false;
     if (animal.status !== "Adoption Pending" && animal.status !== "Rescued") return false;
@@ -499,7 +516,17 @@ export default function CaseDetails() {
                     </button>
                   )}
 
-                  {/* ✅ NEW: Contact button for Lost Pets */}
+                  {/* ✅ Delete Button - Only for the reporter (only if status is Pending) */}
+                  {isReporter() && animal.status === "Pending" && (
+                    <button
+                      onClick={handleDeleteReport}
+                      className="px-4 py-2 bg-[#ff3b30] hover:bg-[#d62c23] text-white text-sm font-semibold rounded-lg transition flex items-center gap-2"
+                    >
+                      🗑️ Delete Report
+                    </button>
+                  )}
+
+                  {/* ✅ Contact button for Lost Pets */}
                   {animal.caseType === "Lost" && (
                     <button
                       onClick={() => toast.info("Please contact the reporter or local authorities to verify ownership.")}
@@ -509,7 +536,7 @@ export default function CaseDetails() {
                     </button>
                   )}
 
-                  {/* ✅ Donate Button for Donors (Visible on EVERY case) */}
+                  {/* ✅ Donate Button for Donors */}
                   {user?.role === "DONOR" && (
                     <button
                       onClick={() => navigate('/donate')}
@@ -718,8 +745,7 @@ export default function CaseDetails() {
             
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
               <p className="text-sm text-blue-800">
-                You're updating the report for <strong>{animal.name || "this animal"}</strong>. 
-                Leave fields empty to keep current values.
+                You're updating the report for <strong>{animal.name || "this animal"}</strong>.
               </p>
             </div>
 
