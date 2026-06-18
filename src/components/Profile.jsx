@@ -6,7 +6,6 @@ import { pageWrapper } from "../styles/common";
 
 export default function Profile() {
   const { user, refreshSession } = useAuth();
-  
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -21,39 +20,32 @@ export default function Profile() {
     if (!passwordForm.currentPassword.trim()) {
       errors.currentPassword = "Current password is required";
     }
-    
+
     if (!passwordForm.newPassword.trim()) {
       errors.newPassword = "New password is required";
     } else if (passwordForm.newPassword.length < 6) {
       errors.newPassword = "Password must be at least 6 characters";
-    } else if (!/(?=.*[a-z])/.test(passwordForm.newPassword)) {
-      errors.newPassword = "Password must contain at least one lowercase letter";
-    } else if (!/(?=.*[A-Z])/.test(passwordForm.newPassword)) {
-      errors.newPassword = "Password must contain at least one uppercase letter";
-    } else if (!/(?=.*\d)/.test(passwordForm.newPassword)) {
-      errors.newPassword = "Password must contain at least one number";
     }
-    
+
     if (!passwordForm.confirmPassword.trim()) {
       errors.confirmPassword = "Please confirm your password";
     } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       errors.confirmPassword = "Passwords do not match";
     }
-    
+
     setPasswordErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    
     if (!validatePasswordForm()) {
       return;
     }
 
     setChangingPassword(true);
     try {
-        await api.put("/user-api/password", {
+      await api.put("/user-api/password", {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword
       });
@@ -129,7 +121,7 @@ export default function Profile() {
                     ? 'border-red-500 focus:ring-red-500' 
                     : 'border-[#e8e8ed] focus:ring-[#0066cc]'
                 }`}
-                placeholder="Enter new password (min 6 chars, 1 uppercase, 1 lowercase, 1 number)"
+                placeholder="Enter new password (min 6 characters)"
               />
               {passwordErrors.newPassword && (
                 <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -170,24 +162,6 @@ export default function Profile() {
                     {passwordForm.newPassword.length >= 6 ? '✓' : '○'}
                   </span>
                   At least 6 characters
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={/(?=.*[a-z])/.test(passwordForm.newPassword) ? 'text-[#34c759]' : 'text-[#a1a1a6]'}>
-                    {/(?=.*[a-z])/.test(passwordForm.newPassword) ? '✓' : '○'}
-                  </span>
-                  One lowercase letter (a-z)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={/(?=.*[A-Z])/.test(passwordForm.newPassword) ? 'text-[#34c759]' : 'text-[#a1a1a6]'}>
-                    {/(?=.*[A-Z])/.test(passwordForm.newPassword) ? '✓' : '○'}
-                  </span>
-                  One uppercase letter (A-Z)
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={/(?=.*\d)/.test(passwordForm.newPassword) ? 'text-[#34c759]' : 'text-[#a1a1a6]'}>
-                    {/(?=.*\d)/.test(passwordForm.newPassword) ? '✓' : '○'}
-                  </span>
-                  One number (0-9)
                 </li>
               </ul>
             </div>
