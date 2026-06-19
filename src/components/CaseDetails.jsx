@@ -220,16 +220,17 @@ export default function CaseDetails() {
     }
   };
 
-  const handleApproveAdoption = async () => {
-    if (!window.confirm("Approve this adoption application?")) return;
-    try {
-      await api.post(`/volunteer-api/approve-adoption/${id}`);
-      toast.success("Adoption approved! 🎉");
-      fetchAnimal();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to approve");
-    }
-  };
+const handleApproveAdoption = async () => {
+  if (!window.confirm("Approve this adoption application?")) return;
+  try {
+    await api.post(`/volunteer-api/approve-adoption/${id}`);
+    toast.success("Adoption approved! 🎉");
+    // ✅ Navigate directly to the case details page
+    navigate(`/case/${id}`);
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to approve");
+  }
+};
 
   const handleRejectAdoption = async () => {
     const reason = window.prompt("Reason for rejection (optional):");
