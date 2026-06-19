@@ -534,14 +534,28 @@ const handleApproveAdoption = async () => {
 
                 <p className="text-[#1d1d1f] mb-4 leading-relaxed">{animal.description}</p>
 
-                <div className="space-y-2 text-sm text-[#6e6e73] mb-6">
-                  <p>📍 <strong>Location:</strong> {animal.location?.address || "Unknown"}</p>
-                  <p>👤 <strong>Reported by:</strong> {animal.reportedBy?.firstName || "Anonymous"}</p>
-                  {animal.assignedVolunteer && (
-                    <p>🦸 <strong>Volunteer:</strong> {typeof animal.assignedVolunteer === 'object' ? animal.assignedVolunteer.firstName : "Assigned"}</p>
-                  )}
-                  <p>📅 <strong>Date:</strong> {new Date(animal.createdAt).toLocaleDateString('en-IN')}</p>
-                </div>
+               <div className="space-y-2 text-sm text-[#6e6e73] mb-6">
+  <p>📍 <strong>Location:</strong> {animal.location?.address || "Unknown"}</p>
+  <p>👤 <strong>Reported by:</strong> {animal.reportedBy?.firstName || "Anonymous"}</p>
+  {animal.assignedVolunteer && (
+    <p>🦸 <strong>Volunteer:</strong> {typeof animal.assignedVolunteer === 'object' ? animal.assignedVolunteer.firstName : "Assigned"}</p>
+  )}
+  <p>📅 <strong>Date:</strong> {new Date(animal.createdAt).toLocaleDateString('en-IN')}</p>
+  
+  {/* ✅ NEW: Display Total Pledged Amount */}
+  {animal.totalPledged > 0 && (
+    <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+      <p className="text-lg font-bold text-green-800">
+        💰 Total Pledged: <span className="text-2xl">₹{animal.totalPledged.toLocaleString('en-IN')}</span>
+      </p>
+      {animal.donations && animal.donations.length > 0 && (
+        <p className="text-xs text-green-600 mt-1">
+          {animal.donations.length} donation{animal.donations.length !== 1 ? 's' : ''} received
+        </p>
+      )}
+    </div>
+  )}
+</div>
 
                 {/* ✅ Action Buttons */}
                 <div className="flex flex-wrap gap-2">
