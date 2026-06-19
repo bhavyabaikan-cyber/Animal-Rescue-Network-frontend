@@ -157,14 +157,22 @@ export default function VolunteerPortal() {
   };
 
   const getStatusBadge = (status) => {
-    const badges = {
-      "In Transit": "bg-blue-100 text-blue-800 border border-blue-200",
-      "Rescued": "bg-emerald-100 text-emerald-800 border border-emerald-200",
-      "Adoption Pending": "bg-purple-100 text-purple-800 border border-purple-200",
-      "Adopted": "bg-gray-100 text-gray-800 border border-gray-200"
-    };
-    return badges[status] || "bg-gray-100 text-gray-800";
+  const badges = {
+    // Regular statuses
+    "In Transit": "bg-blue-100 text-blue-800 border border-blue-200",
+    "Rescued": "bg-emerald-100 text-emerald-800 border border-emerald-200",
+    "Adoption Pending": "bg-purple-100 text-purple-800 border border-purple-200",
+    "Adopted": "bg-gray-100 text-gray-800 border border-gray-200",
+    
+    // Lost case statuses
+    "Found": "bg-blue-100 text-blue-800 border border-blue-200",
+    "Owner Contacted": "bg-indigo-100 text-indigo-800 border border-indigo-200",
+    "Met Owner": "bg-cyan-100 text-cyan-800 border border-cyan-200",
+    "Reunited with Owner": "bg-emerald-100 text-emerald-800 border border-emerald-200",
+    "Still Missing": "bg-red-100 text-red-800 border border-red-200"
   };
+  return badges[status] || "bg-gray-100 text-gray-800";
+};
 
   if (loading) return <p className="text-center py-20 text-[#6e6e73]">Loading volunteer cases...</p>;
 
@@ -438,56 +446,73 @@ export default function VolunteerPortal() {
       </div>
 
       {/* Status Update Modal */}
-      {selectedCase && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg">
-            <h3 className="text-xl font-bold mb-4">Update Case Status</h3>
-            <form onSubmit={handleStatusUpdate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#1d1d1f] mb-1">New Status</label>
-                <select 
-                  value={statusUpdate.status} 
-                  onChange={(e) => setStatusUpdate({...statusUpdate, status: e.target.value})}
-                  className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
-                  required
-                >
-                  <option value="">Select status</option>
-                  <option value="In Transit">In Transit</option>
-                  <option value="Rescued">Rescued</option>
-                  <option value="Adoption Pending">Adoption Pending</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#1d1d1f] mb-1">Notes / Description</label>
-                <textarea 
-                  value={statusUpdate.description}
-                  onChange={(e) => setStatusUpdate({...statusUpdate, description: e.target.value})}
-                  className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
-                  rows="3"
-                  placeholder="Add any relevant details..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#1d1d1f] mb-1">Upload Photo (Optional)</label>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={(e) => setStatusUpdate({...statusUpdate, image: e.target.files[0]})}
-                  className="w-full text-sm text-[#6e6e73] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#f5f5f7] file:text-[#1d1d1f] hover:file:bg-[#e8e8ed]"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={processing} className="flex-1 py-2.5 bg-[#0066cc] text-white font-semibold rounded-lg hover:bg-[#0052a3] disabled:opacity-50">
-                  {processing ? "Updating..." : "Update Status"}
-                </button>
-                <button type="button" onClick={() => setSelectedCase(null)} className="flex-1 py-2.5 bg-[#f5f5f7] text-[#1d1d1f] font-semibold rounded-lg hover:bg-[#e8e8ed]">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+{selectedCase && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-lg">
+      <h3 className="text-xl font-bold mb-4">Update Case Status</h3>
+      <form onSubmit={handleStatusUpdate} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-[#1d1d1f] mb-1">New Status</label>
+          <select 
+            value={statusUpdate.status} 
+            onChange={(e) => setStatusUpdate({...statusUpdate, status: e.target.value})}
+            className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+            required
+          >
+            <option value="">Select status</option>
+            
+            {/* ✅ Regular Case Statuses */}
+            {selectedCase.caseType !== "Lost" && (
+              <>
+                <option value="In Transit">In Transit</option>
+                <option value="Rescued">Rescued</option>
+                <option value="Adoption Pending">Adoption Pending</option>
+              </>
+            )}
+            
+            {/* ✅ Lost/Missing Case Statuses */}
+            {selectedCase.caseType === "Lost" && (
+              <>
+                <option value="Found">Found</option>
+                <option value="Owner Contacted">Owner Contacted</option>
+                <option value="Met Owner">Met Owner</option>
+                <option value="Reunited with Owner">Reunited with Owner</option>
+                <option value="Still Missing">Still Missing</option>
+              </>
+            )}
+          </select>
         </div>
-      )}
+        <div>
+          <label className="block text-sm font-medium text-[#1d1d1f] mb-1">Notes / Description</label>
+          <textarea 
+            value={statusUpdate.description}
+            onChange={(e) => setStatusUpdate({...statusUpdate, description: e.target.value})}
+            className="w-full px-3 py-2 border border-[#e8e8ed] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0066cc]"
+            rows="3"
+            placeholder="Add any relevant details..."
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[#1d1d1f] mb-1">Upload Photo (Optional)</label>
+          <input 
+            type="file" 
+            accept="image/*"
+            onChange={(e) => setStatusUpdate({...statusUpdate, image: e.target.files[0]})}
+            className="w-full text-sm text-[#6e6e73] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#f5f5f7] file:text-[#1d1d1f] hover:file:bg-[#e8e8ed]"
+          />
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button type="submit" disabled={processing} className="flex-1 py-2.5 bg-[#0066cc] text-white font-semibold rounded-lg hover:bg-[#0052a3] disabled:opacity-50">
+            {processing ? "Updating..." : "Update Status"}
+          </button>
+          <button type="button" onClick={() => setSelectedCase(null)} className="flex-1 py-2.5 bg-[#f5f5f7] text-[#1d1d1f] font-semibold rounded-lg hover:bg-[#e8e8ed]">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
     </div>
   );
 }
